@@ -1,0 +1,19 @@
+frontend ft_redis-write
+    mode tcp
+    bind *:6380
+    default_backend bk_redis-write
+
+backend bk_redis-write
+    mode tcp
+    option tcp-check
+    tcp-check connect
+    tcp-check send AUTH\ PASSWORD_HERE\r\n
+    tcp-check send PING\r\n
+    tcp-check expect string +PONG
+    tcp-check send info\ replication\r\n
+    tcp-check expect string role:master
+    tcp-check send QUIT\r\n
+    tcp-check expect string +OK
+    server redis-master IP:6379 check inter 1s
+    server redis-slave1 IP:6379 check inter 1s
+    server redis-slave2 IP:6379 check inter 1s

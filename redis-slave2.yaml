@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  redis-slave-2:
+    image: redis:7.4.1
+    restart: always
+    container_name: redis-slave-2
+    hostname: redis-slave-2
+    network_mode: host
+    volumes:
+      - ./redis-slave2.conf:/etc/redis/redis.conf
+      - ./data/slave2:/data
+    command:
+      [
+        "redis-server",
+        "/etc/redis/redis.conf"
+      ]
+  sentinel-3:
+    image: redis:7.4.1
+    restart: always
+    container_name: sentinel-3
+    hostname: sentinel-3
+    network_mode: host
+    depends_on:
+      - redis-slave-2
+    command: >
+      sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf &&
+            echo "sentinel monitor master MASTER_IP 6379 2" >> /etc/sentinel.conf &&
+            echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf &&
+            echo "sentinel down-after-milliseconds master 10000" >> /etc/sentinel.conf &&
+            echo "sentinel failover-timeout master 10000" >> /etc/sentinel.conf &&
+            echo "sentinel parallel-syncs master 1" >> /etc/sentinel.conf &&
+            redis-sentinel /etc/sentinel.conf'
